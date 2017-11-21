@@ -1,5 +1,6 @@
 # Tampermonkey-TribalWars-Bot
-Tampermonkey script for Tribal Wars 1
+Tampermonkey script for Tribal Wars 1  
+Can be used for building construction and farming.
 
 ## Requirements
 
