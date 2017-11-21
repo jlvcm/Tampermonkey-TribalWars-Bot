@@ -17,10 +17,10 @@ Tampermonkey is a userscript manager for google chrome
 1. In tribal wars game settings:  
 Disable 'Show village overview in a graphical format'  
 
-2. In the TamermonkeyTribalWarsBot.js file of this repository, on line 7:  
+2. In the TamermonkeyTribalWarsBot.js file of this repository, modify the @match in the ==UserScript== section:  
 Replace 'XX' with your current world (Example for world 94: @match https://en94.tribalwars.net/*)  
 
-3. In the TamermonkeyTribalWarsBot.js file of this repository, between lines 11 and 42 (setup section):  
+3. In the TamermonkeyTribalWarsBot.js file of this repository, modify the /** SETUP **/ section:  
 You can choose your preferences for the bot.  
 
 4. Copy paste the content of your TamermonkeyTribalWarsBot.js file into a new Tampermonkey script.  
