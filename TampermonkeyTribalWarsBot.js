@@ -36,7 +36,8 @@ let farmTroopSets = {
         "axe" : 3
     },
     "FARM_TROOP_SET_3":{
-        "lc" : 8
+        "lc" : 8,
+        "spy" : 1
     }
 };
 //*************************** /SETUP ***************************//
@@ -285,6 +286,20 @@ function getAvailableInputs(){
             "amount": farmTroopSet.lc
         };
         availableInputs.lc = availableInputObject;
+    }
+    
+    // spy
+    if (farmTroopSet.spy !== undefined){
+        let currentInput = document.getElementById("unit_input_spy");
+        let currentInputAvailableCount = currentInput.getAttribute("data-all-count");
+        if (farmTroopSet.spy > currentInputAvailableCount){
+            return;
+        }
+        let availableInputObject = {
+            "input" : currentInput,
+            "amount": farmTroopSet.spy
+        };
+        availableInputs.spy = availableInputObject;
     }
 
     return availableInputs;
