@@ -106,6 +106,9 @@ function executePhase2(){
     let currentView = getCurrentView();
     console.log(currentView);
     setTimeout(function(){
+       
+        getAttackCounter();
+        
         if (currentView == HEADQUARTERS_VIEW){
 
             // build next building if possible
@@ -116,28 +119,32 @@ function executePhase2(){
 
         }
         if (currentView == RALLY_POINT_VIEW) {
+            ////Not working properly yet, don't know why.
+            ////getAttackCounter();
 
+            let attackCounter = getAttackCounter();
             //Stops framing at Night Bonus, still have to restart at Night Bonus End
-            if (NightBonus == "true"){
+            if ((NightBonus == "true") && (attackCounter > MAX_ATT_POSS)) {
                 goToOverviewViewFromRallyPointView();
             }
 
             // Send out farm attacks
             else sendFarmAttacks();
-            
+
         }
         else if (currentView == OVERVIEW_VIEW) {
-            //Checking if Farm Attacks are at or above set maximum
+            getAttackCounter();
             let attackCounter = getAttackCounter();
             if ((NightBonus == "false") && (attackCounter < MAX_ATT_POSS)) {
-                    goToRallyPointViewFromOverviewView();
-                
+                goToRallyPointViewFromOverviewView();
             }
-            // Open headquarters view if farming all good
-            else document.getElementById("l_main").children[0].children[0].click();
+            setTimeout(arguments.callee, 20000);
         }
-        else if (currentView == ATTACK_CONFIRM_VIEW){
+        else if (currentView == ATTACK_CONFIRM_VIEW) {
             document.getElementById("troop_confirm_go").click();
+
+            //IF YOU GOT PROBLEMS WITH ATTACKS NOT BEEING SENT ADJUST THE WAITING TIME BELOW, this may depend on your connection speed.
+            setTimeout(goToOverviewViewFromRallyPointView, 500);
         }
     }, delay);
 }
@@ -240,7 +247,7 @@ function sendFarmAttacks(){
     goToOverviewViewFromRallyPointView();
 }
 
-function goToOverviewViewFromRallyPointView(){
+function goToOverviewViewFromRallyPointView() {
     document.getElementById("menu_row").children[1].children[0].click();
 }
 
