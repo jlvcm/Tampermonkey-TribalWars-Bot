@@ -15,6 +15,8 @@ const MAX_WAIT_TIME = 40000;
 //Enter The Start/End of the Night Bonus of your World (0-24). To disable set both values to 0.
 const NIGHT_BONUS_START = 23;
 const NIGHT_BONUS_END = 7;
+//Enter the Maximal pssible (or desired) amount of attacks, calculated by total amount of troops divided by your chosen Farm_Troop_Set
+const MAX_ATT_POSS = 5;
 // Choose the bot's actions
 // PHASE_1: The bot automatically queues buildings
 // PHASE_2: The bot automatically queues buildings and farms villages 
@@ -50,7 +52,9 @@ const OVERVIEW_VIEW = "OVERVIEW_VIEW";
 const HEADQUARTERS_VIEW = "HEADQUARTERS_VIEW";
 const RALLY_POINT_VIEW = "RALLY_POINT_VIEW";
 const ATTACK_CONFIRM_VIEW = "ATTACK_CONFIRM_VIEW";
-const NOW = "getHours()";
+const NOW = "moment().hour().format(HH)";
+const TRUE = "true";
+const FALSE = "false";
 
 (function() {
     'use strict';
@@ -90,6 +94,14 @@ function executePhase2(){
 
     let delay = Math.floor(Math.random() * (MAX_WAIT_TIME - MIN_WAIT_TIME) + MIN_WAIT_TIME);
 
+    //calc Night Bonus var
+    if (NIGHT_BONUS_START < NOW || NIGHT_BONUS_END > NOW) {
+        var NightBonus;
+        NightBonus = TRUE;
+    }
+    else var NightBonus;
+    NightBonus = FALSE;
+    
     // Process action
     let currentView = getCurrentView();
     console.log(currentView);
@@ -103,10 +115,10 @@ function executePhase2(){
             document.getElementById("main_buildrow_place").children[0].children[0].click();
 
         }
-        else if (currentView == RALLY_POINT_VIEW){
+        if (currentView == RALLY_POINT_VIEW) {
 
-            //Stops faraming at active Night Bonus
-            if (NIGHT_BONUS_START < NOW < NIGHT_BONUS_END){
+            //Stops framing at Night Bonus, still have to restart at Night Bonus End
+            if (NightBonus == "true"){
                 goToOverviewViewFromRallyPointView();
             }
 
@@ -114,9 +126,15 @@ function executePhase2(){
             else sendFarmAttacks();
             
         }
-        else if (currentView == OVERVIEW_VIEW){
-            // Open headquarters view
-            document.getElementById("l_main").children[0].children[0].click();
+        else if (currentView == OVERVIEW_VIEW) {
+            //Checking if Farm Attacks are at or above set maximum
+            let attackCounter = getAttackCounter();
+            if ((NightBonus == "false") && (attackCounter < MAX_ATT_POSS)) {
+                    goToRallyPointViewFromOverviewView();
+                
+            }
+            // Open headquarters view if farming all good
+            else document.getElementById("l_main").children[0].children[0].click();
         }
         else if (currentView == ATTACK_CONFIRM_VIEW){
             document.getElementById("troop_confirm_go").click();
@@ -168,6 +186,19 @@ function getNextBuildingElement() {
     return found;
 }
 
+//Counts all attack on their way, home and away.
+function getAttackCounter() {
+    let attacksOnWay = document.getElementsByClassName("commands-command-count");
+    let attackCounter = [];
+
+    for (var i = 0, len = attacksOnWay.length; i < len; i++) {
+        let attCountString =
+            attacksOnWay[i].innerHTML.split(")")[0].split("(")[1];
+        attackCounter.push(attCountString);
+    }
+
+    return attackCounter;
+}
 
 function sendFarmAttacks(){
 
@@ -211,6 +242,10 @@ function sendFarmAttacks(){
 
 function goToOverviewViewFromRallyPointView(){
     document.getElementById("menu_row").children[1].children[0].click();
+}
+
+function goToRallyPointViewFromOverviewView() {
+    document.getElementById("l_place").children[0].children[0].click();
 }
 
 function sendAttackToCoordinate(coordinates, inputAmounts){
