@@ -12,6 +12,9 @@
 // Choose Minimum and maximum wait time between actions (in milliseconds)
 const MIN_WAIT_TIME = 20000;
 const MAX_WAIT_TIME = 40000;
+//Enter The Start/End of the Night Bonus of your World (0-24). To disable set both values to 0.
+const NIGHT_BONUS_START = 23;
+const NIGHT_BONUS_END = 7;
 // Choose the bot's actions
 // PHASE_1: The bot automatically queues buildings
 // PHASE_2: The bot automatically queues buildings and farms villages 
@@ -47,6 +50,7 @@ const OVERVIEW_VIEW = "OVERVIEW_VIEW";
 const HEADQUARTERS_VIEW = "HEADQUARTERS_VIEW";
 const RALLY_POINT_VIEW = "RALLY_POINT_VIEW";
 const ATTACK_CONFIRM_VIEW = "ATTACK_CONFIRM_VIEW";
+const NOW = "getHours()";
 
 (function() {
     'use strict';
@@ -101,9 +105,14 @@ function executePhase2(){
         }
         else if (currentView == RALLY_POINT_VIEW){
 
-            // Send out farm attacks
-            sendFarmAttacks();
+            //Stops faraming at active Night Bonus
+            if (NIGHT_BONUS_START < NOW < NIGHT_BONUS_END){
+                goToOverviewViewFromRallyPointView();
+            }
 
+            // Send out farm attacks
+            else sendFarmAttacks();
+            
         }
         else if (currentView == OVERVIEW_VIEW){
             // Open headquarters view
