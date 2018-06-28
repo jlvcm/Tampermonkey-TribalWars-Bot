@@ -82,7 +82,7 @@ function executePhase1(){
     }
     else if (currentView == OVERVIEW_VIEW){
         // Open headquarters view
-        document.getElementById("l_main").children[0].children[0].click();
+        document.getElementById("l_main").children[1].children[0].click();
     }
 
 }
