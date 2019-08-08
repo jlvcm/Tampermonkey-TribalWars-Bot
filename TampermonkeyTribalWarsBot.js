@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Tribal wars
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.2.3
 // @description  Tribal wars bot
 // @author       Eric Kavalec
-// @match        https://enXX.tribalwars.net/*
+// @fixes        jlvcm
+// @match        https://enXX.tribalwars.com/*
 // @grant        none
 // ==/UserScript==
 
@@ -16,20 +17,20 @@ const MAX_WAIT_TIME = 40000;
 const NIGHT_BONUS_START = 23;
 const NIGHT_BONUS_END = 7;
 //Enter the Maximal pssible (or desired) amount of attacks, calculated by total amount of troops divided by your chosen Farm_Troop_Set
-const MAX_ATT_POSS = 5;
+const MAX_ATT_POSS = 1;
 // Choose the bot's actions
 // PHASE_1: The bot automatically queues buildings
-// PHASE_2: The bot automatically queues buildings and farms villages 
-const PHASE = "PHASE_1";
-// Choose whether you want the bot to queue buildings in the defined order (= true) or  
+// PHASE_2: The bot automatically queues buildings and farms villages
+const PHASE = ((new Date).getMinutes() % 20 <10)?"PHASE_2":"PHASE_1"; // switch phase every 10 minutes
+// Choose whether you want the bot to queue buildings in the defined order (= true) or
 // as soon as a building is available for the building queue (= false)
 const WAIT_FOR_ORDER_BUILDINGS = false;
-// Enter the coordinates of the villages you want to farm 
+// Enter the coordinates of the villages you want to farm
 const FARM_COORDINATES = [
     '000|000', '000|000', '000|000'
 ];
 // Choose your farming troops template
-const FARM_TROOP_SET = "FARM_TROOP_SET_3";
+const FARM_TROOP_SET = "FARM_TROOP_SET_1";
 // Define your farming troops template
 let farmTroopSets = {
     "FARM_TROOP_SET_1":{
@@ -38,7 +39,8 @@ let farmTroopSets = {
     },
     "FARM_TROOP_SET_2":{
         "spear" : 15,
-        "axe" : 3
+        "axe" : 3,
+        'knight':1
     },
     "FARM_TROOP_SET_3":{
         "lc" : 8,
@@ -60,7 +62,7 @@ const FALSE = "false";
     'use strict';
 
     console.log("-- Tribal Wars script enabled --");
-
+    console.log(PHASE);
     if (PHASE == "PHASE_1"){
         executePhase1();
     }
@@ -77,12 +79,16 @@ function executePhase1(){
     if (currentView == HEADQUARTERS_VIEW){
         setInterval(function(){
             // build next building if possible
-            buildNextBuilding();
+            let built = buildNextBuilding();
+            let currentphase= ((new Date).getMinutes() % 20 <10)?"PHASE_2":"PHASE_1";
+            if(!built && (currentphase != 'PHASE_1')){
+               location.reload();
+            }
         }, 10000);
     }
     else if (currentView == OVERVIEW_VIEW){
         // Open headquarters view
-        document.getElementById("l_main").children[1].children[0].click();
+        document.getElementById("l_main").children[0].children[0].click();
     }
 
 }
@@ -93,22 +99,22 @@ function executePhase2(){
     // TODO: Research axe
 
     let delay = Math.floor(Math.random() * (MAX_WAIT_TIME - MIN_WAIT_TIME) + MIN_WAIT_TIME);
-
+    var NightBonus = FALSE;
     //calc Night Bonus var
     if (NIGHT_BONUS_START < NOW || NIGHT_BONUS_END > NOW) {
-        var NightBonus;
         NightBonus = TRUE;
     }
-    else var NightBonus;
-    NightBonus = FALSE;
-    
+
     // Process action
     let currentView = getCurrentView();
     console.log(currentView);
     setTimeout(function(){
-       
+            let currentphase= ((new Date).getMinutes() % 20 <10)?"PHASE_2":"PHASE_1";
+            if((currentphase != 'PHASE_2')){
+               location.reload();
+            }
         getAttackCounter();
-        
+
         if (currentView == HEADQUARTERS_VIEW){
 
             // build next building if possible
@@ -138,7 +144,7 @@ function executePhase2(){
             if ((NightBonus == "false") && (attackCounter < MAX_ATT_POSS)) {
                 goToRallyPointViewFromOverviewView();
             }
-            setTimeout(arguments.callee, 20000);
+            setTimeout(arguments.callee, 15000);
         }
         else if (currentView == ATTACK_CONFIRM_VIEW) {
             document.getElementById("troop_confirm_go").click();
@@ -150,18 +156,18 @@ function executePhase2(){
 }
 
 function getCurrentView(){
-    let currentUrl = window.location.href;
-    if (currentUrl.endsWith('overview')){
+    let urlParams = new URLSearchParams(window.location.search);
+    let screen = urlParams.get('screen');
+    if (screen == 'overview'){
         return OVERVIEW_VIEW;
     }
-    else if (currentUrl.endsWith('main')){
+    else if (screen == 'main'){
         return HEADQUARTERS_VIEW;
     }
-    else if (currentUrl.endsWith('place')){
-        return RALLY_POINT_VIEW;
-    }
-    else if (currentUrl.endsWith('confirm')){
+     else if ((screen == 'place') && urlParams.get('try') == 'confirm'){
         return ATTACK_CONFIRM_VIEW;
+    } else if (screen == 'place'){
+        return RALLY_POINT_VIEW;
     }
 }
 
@@ -170,7 +176,9 @@ function buildNextBuilding(){
     if (nextBuildingElement !== undefined){
         nextBuildingElement.click();
         console.log("Clicked on " + nextBuildingElement);
+        return true;
     }
+    return false;
 }
 
 function getNextBuildingElement() {
@@ -282,75 +290,17 @@ function getAvailableInputs(){
     let currentInput;
     let currentInputAvailableCount;
     let availableInputObject;
-
-    // spear
-    if (farmTroopSet.spear !== undefined){
-        let currentInput = document.getElementById("unit_input_spear");
+    for (const [unitType, units] of Object.entries(farmTroopSet)) {
+        let currentInput = document.getElementById("unit_input_"+unitType);
         let currentInputAvailableCount = currentInput.getAttribute("data-all-count");
-        if (farmTroopSet.spear > currentInputAvailableCount){
+        if (units > currentInputAvailableCount){
             return;
         }
         let availableInputObject = {
             "input" : currentInput,
-            "amount": farmTroopSet.spear
+            "amount": units
         };
-        availableInputs.spear = availableInputObject;
-    }
-
-    // sword
-    if (farmTroopSet.sword !== undefined){
-        let currentInput = document.getElementById("unit_input_sword");
-        let currentInputAvailableCount = currentInput.getAttribute("data-all-count");
-        if (farmTroopSet.sword > currentInputAvailableCount){
-            return;
-        }
-        let availableInputObject = {
-            "input" : currentInput,
-            "amount": farmTroopSet.sword
-        };
-        availableInputs.sword = availableInputObject;
-    }
-
-    // axe
-    if (farmTroopSet.axe !== undefined){
-        let currentInput = document.getElementById("unit_input_axe");
-        let currentInputAvailableCount = currentInput.getAttribute("data-all-count");
-        if (farmTroopSet.axe > currentInputAvailableCount){
-            return;
-        }
-        let availableInputObject = {
-            "input" : currentInput,
-            "amount": farmTroopSet.axe
-        };
-        availableInputs.axe = availableInputObject;
-    }
-
-    // lc
-    if (farmTroopSet.lc !== undefined){
-        let currentInput = document.getElementById("unit_input_light");
-        let currentInputAvailableCount = currentInput.getAttribute("data-all-count");
-        if (farmTroopSet.lc > currentInputAvailableCount){
-            return;
-        }
-        let availableInputObject = {
-            "input" : currentInput,
-            "amount": farmTroopSet.lc
-        };
-        availableInputs.lc = availableInputObject;
-    }
-    
-    // spy
-    if (farmTroopSet.spy !== undefined){
-        let currentInput = document.getElementById("unit_input_spy");
-        let currentInputAvailableCount = currentInput.getAttribute("data-all-count");
-        if (farmTroopSet.spy > currentInputAvailableCount){
-            return;
-        }
-        let availableInputObject = {
-            "input" : currentInput,
-            "amount": farmTroopSet.spy
-        };
-        availableInputs.spy = availableInputObject;
+        availableInputs[unitType] = availableInputObject;
     }
 
     return availableInputs;
